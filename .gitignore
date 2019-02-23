@@ -1,0 +1,10 @@
+.pio
+.pioenvs
+.piolibdeps
+*.swp
+*.o
+creds.h
+lib/
+/src/*.c
+/src/*.cpp
+/src/*.h
