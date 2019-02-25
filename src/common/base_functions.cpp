@@ -68,7 +68,7 @@ int connect_to_wifi() {
 
   // setup MDNS
   if (MDNS.begin(nodename)) {
-    DF("server started on http://%s.local\n\r", nodename);
+    DF("mdns server started on http://%s.local\n\r", nodename);
   }
 
   return 1;

@@ -42,8 +42,8 @@
 #define SDCARD_CS     5
 
 // I2S
-#define I2S_LRCK      25
-#define I2S_SCK       26
+#define I2S_LRCK      25 // also known as WCLK
+#define I2S_SCK       26 // also known as BCLK
 #define I2S_DIN       27
 #define I2S_EN        23
 
