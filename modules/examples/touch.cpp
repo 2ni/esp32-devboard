@@ -32,13 +32,13 @@ void setup() {
 }
 
 void loop() {
-  // DF("value: %d\n", touchRead(IO2));
 
   int value = 0;
   for (int i=0; i<100; i++) {
     value += touchRead(IO2);
   }
   value /= 100;
+  DF("value: %d\n", value);
 
   if (released && value < threshold) {
     DL("switching LED");
@@ -50,7 +50,7 @@ void loop() {
     released = 1;
   }
 
-  delay(100);
+  delay(1000);
 }
 
 
