@@ -17,7 +17,7 @@
 
 4. Activate an example
 
-    `.activate.py modules/examples/blink.cpp`
+    `./activate.py modules/examples/blink.cpp`
 
 
 5. Start upload
