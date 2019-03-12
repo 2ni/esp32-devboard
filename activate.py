@@ -11,7 +11,8 @@ import os, re, argparse
 from serial.tools import list_ports
 
 parser = argparse.ArgumentParser(description='Activate given files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('files', metavar='file', type=argparse.FileType('r'), nargs='*', help='Files to activate')
+parser.add_argument('files', metavar='file', nargs='*', help='Files to activate')
+# parser.add_argument('files', metavar='file', type=argparse.FileType('r'), nargs='*', help='Files to activate')
 
 args = parser.parse_args()
 
@@ -26,6 +27,15 @@ if os.path.isdir('modules/common'):
     for f in os.listdir('modules/common/'):
         os.system('ln -s ../modules/common/{f} src/'.format(f=f))
 
+# if dir given, link every file from the dir
+files = []
+for input in args.files:
+    if os.path.isdir(input):
+        # alternative glob.glob('files_path/[!.]*')
+        files.extend([ os.path.join(input, f) for f in os.listdir(input) if not f.startswith(".") ])
+    else:
+        files.append(input)
+
 # link each given file in src
-for f in args.files:
-    os.system('ln -fs ../{f} src/'.format(f=f.name))
+for f in files:
+    os.system('ln -fs ../{f} src/'.format(f=f))
