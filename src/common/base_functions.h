@@ -8,7 +8,6 @@
 // numbers are GPIO numbers
 
 #define LED           17
-#define OUTPUT        17
 
 #define ROTARY_BUTTON 37
 #define ROTARY_A      38
