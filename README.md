@@ -20,7 +20,7 @@ Main features:
 - 64Mb Flash
 
 # Hardware
-see [hardware/](https://github.com/2ni/esp32-devboard/tree/master/hardware) or https://easyeda.com/vkbs/esp32-developer
+see [hardware/](hardware) or https://easyeda.com/vkbs/esp32-developer
 
 # Wifi
 add your custom file creds.h in [src/common/](src/common) similar to the one below:
@@ -34,6 +34,8 @@ static const char* WIFI_CREDS[] = {"ssid1", "pw1",\
 # Base functions and definitions
 There are a couple of base functions for debugging or connecting to wifi. See [src/common/base_functions.h](src/common/base_functions.h)
 
+| Function          | Description                                   | Example                  |
+|-------------------|-----------------------------------------------|--------------------------|
 | DL()              | Output text to terminal with linefeed         | DL("Hello World")        |
 | DF()              | Output text with variables to terminal        | DF("argument a:%u\n", a) |
 | connect_to_wifi() | Connects the ESP to wifi according to creds.h |                          |
@@ -41,7 +43,7 @@ There are a couple of base functions for debugging or connecting to wifi. See [s
 All the board specific GPIO's are also defined in that file.
 
 # Examples
-There are a couple of [examples](https://github.com/2ni/esp32-devboard/tree/master/modules/examples) which can be "activated" and run as follows:
+There are a couple of [examples](examples) which can be "activated" and run as follows:
 ```
 ./activate.py modules/examples/blink.cpp
 make st
