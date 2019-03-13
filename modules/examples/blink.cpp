@@ -6,7 +6,8 @@
 #include <Arduino.h>
 #include "base_functions.h"
 
-#include <Rotary.h> // https://github.com/buxtronix/arduino/blob/master/libraries/Rotary
+#include <Rotary.h> // git clone https://github.com/buxtronix/arduino/blob/master/libraries/Rotary into lib/
+
 Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 int counter = 0;
 
