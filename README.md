@@ -51,6 +51,15 @@ make st
 
 make st means "serial/terminal". It will detect on which usb your board is connected, compile the activated code and run a terminal.
 
+Dependencies can be searched and installed with
+
+```
+pio lib search <sth>
+pio lib install <id>
+```
+
+or cloned into the lib directory.
+
 | Example    | Description                                                                  | Dependencies        |
 |------------|------------------------------------------------------------------------------|---------------------|
 | blink.cpp  | Blinking the onboard LED at startup and when using the push button or rotary | [Rotary by buxtronix](https://github.com/buxtronix/arduino/blob/master/libraries/Rotary) |
