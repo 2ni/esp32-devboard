@@ -1,5 +1,6 @@
 /**
- * Simple blinking
+ * Simple blinking by pushing the button or rotary
+ *
  */
 
 #include <Arduino.h>
