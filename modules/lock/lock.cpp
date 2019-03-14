@@ -33,7 +33,7 @@ volatile uint8_t curSlot = 0;
 
 uint8_t digitNeedsUpdate = false;
 uint8_t isAdmin = false;
-volatile unsigned char rotaryResult;
+volatile uint8_t rotaryResult;
 
 int8_t lastPeriod = 0;
 volatile int8_t curPeriod = 1;
