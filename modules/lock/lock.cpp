@@ -27,10 +27,19 @@ Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 
 char code[4] = "007";
 char curCode[4] = "000";
+
 uint8_t lastSlot = 0;
-uint8_t curSlot = 0;
+volatile uint8_t curSlot = 0;
+
 uint8_t digitNeedsUpdate = false;
 uint8_t isAdmin = false;
+volatile unsigned char rotaryResult;
+
+int8_t lastPeriod = 0;
+volatile int8_t curPeriod = 1;
+
+hw_timer_t *timer = NULL;
+
 
 int8_t getSlotX(int8_t index) {
   return SLOT_FRAME_X + index * (SLOT_FRAME_WIDTH + SLOT_FRAME_GAP);
@@ -83,31 +92,9 @@ void IRAM_ATTR rotaryPushed() {
 }
 
 void IRAM_ATTR rotaryRotate() {
-  unsigned char result = rotary.process();
-  uint8_t nr = (int)curCode[curSlot] - 48;
-
-  if (result == DIR_CW) {
-    if (nr == 9) {
-      nr = 0;
-    } else {
-      nr++;
-    }
-  } else if (result == DIR_CCW) {
-    if (nr == 0) {
-      nr = 9;
-    } else {
-      nr--;
-    }
-  }
-
-  curCode[curSlot] = (char)(nr + 48);
-  DF("counter: %s\n", curCode);
-  digitNeedsUpdate = true;
+  rotaryResult = rotary.process();
 }
 
-hw_timer_t *timer = NULL;
-int8_t lastPeriod = 0;
-volatile int8_t curPeriod = 1;
 void IRAM_ATTR togglePeriod() {
   curPeriod = !curPeriod;
 }
@@ -172,6 +159,29 @@ void loop() {
 
     digitNeedsUpdate = true;
     lastSlot = curSlot;
+  }
+
+  if (rotaryResult) {
+    uint8_t nr = (int)curCode[curSlot] - 48;
+
+    if (rotaryResult == DIR_CW) {
+      if (nr == 9) {
+        nr = 0;
+      } else {
+        nr++;
+      }
+    } else if (rotaryResult == DIR_CCW) {
+      if (nr == 0) {
+        nr = 9;
+      } else {
+        nr--;
+      }
+    }
+
+    curCode[curSlot] = (char)(nr + 48);
+    DF("counter: %s\n", curCode);
+    digitNeedsUpdate = true;
+    rotaryResult = 0;
   }
 
   if (digitNeedsUpdate) {
