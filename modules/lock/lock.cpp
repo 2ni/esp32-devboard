@@ -8,16 +8,12 @@
  */
 
 #include <Arduino.h>
-#include "base_functions.h"
-
+#include <Rotary.h>
 #include <Wire.h>
+
+#include "base_functions.h"
 #include "SSD1306Wire.h"
 #include "fonts.h"
-SSD1306Wire display(0x3c, SDA, SCL);
-
-#include <Rotary.h>
-
-Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 
 #define SLOT_FRAME_WIDTH 25
 #define SLOT_FRAME_HEIGHT 31
@@ -25,55 +21,64 @@ Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 #define SLOT_FRAME_X 21
 #define SLOT_FRAME_Y 24
 
-char code[4] = "007";
-char curCode[4] = "000";
+#define STATUS_X 0
+#define STATUS_Y 0
 
-uint8_t lastSlot = 0;
-volatile uint8_t curSlot = 0;
+SSD1306Wire display(0x3c, SDA, SCL);
 
-uint8_t digitNeedsUpdate = false;
-uint8_t isAdmin = false;
-volatile uint8_t rotaryResult;
+Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 
-int8_t lastPeriod = 0;
-volatile int8_t curPeriod = 1;
+String code = "007";
+String curCode = "000";
+
+unsigned int lastSlot = 0;
+volatile unsigned int curSlot = 0;
+
+unsigned int digitNeedsUpdate = false;
+unsigned int isAdmin = false;
+volatile unsigned int rotaryResult;
+
+int lastPeriod = 0;
+volatile int curPeriod = 1;
+
+String curDigit = "0";
+String curStatus = "LOCKED";
 
 hw_timer_t *timer = NULL;
 
-
-int8_t getSlotX(int8_t index) {
+int getSlotX(int index) {
   return SLOT_FRAME_X + index * (SLOT_FRAME_WIDTH + SLOT_FRAME_GAP);
 }
 
-void drawSlotFrame(int8_t x, int8_t y) {
+void drawSlotFrame(int x, int y) {
   display.drawRect(x, y, SLOT_FRAME_WIDTH, SLOT_FRAME_HEIGHT);
   display.display();
 }
 
-void clearSlotFrame(int8_t x, int8_t y) {
+void clearSlotFrame(int x, int y) {
   display.setColor(BLACK);
   drawSlotFrame(x, y);
   display.setColor(WHITE);
 }
 
-void drawDigit(int8_t x, int8_t y, String digit) {
+void drawDigit(int x, int y, String digit) {
   display.setFont(Unibody8Pro_Regular_24);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(x + 2, y - 4, String(digit));
+  display.drawString(x + 2, y - 4, digit);
   display.display();
+  curDigit = digit;
 }
 
-void clearDigit(int8_t x, int8_t y) {
+void clearDigit(int x, int y) {
   display.setColor(BLACK);
-  display.fillRect(x + 1, y + 1, SLOT_FRAME_WIDTH - 2, SLOT_FRAME_HEIGHT - 2);
-  display.display();
+  drawDigit(x, y, curDigit);
   display.setColor(WHITE);
 }
 
-void drawCodeInput(int8_t x, int8_t y) {
-  int8_t y2 = y;
-  int8_t x2 = x;
-  for (int8_t i = 0; i < 3; i++) {
+void drawCodeInput(int x, int y) {
+  int y2 = y;
+  int x2 = x;
+  for (int i = 0; i < 3; i++) {
     drawSlotFrame(x2, y2);
     drawDigit(x2, y2, String(curCode[i]));
     x2 += SLOT_FRAME_WIDTH + SLOT_FRAME_GAP;
@@ -82,22 +87,35 @@ void drawCodeInput(int8_t x, int8_t y) {
 
 void updateDigit() {
   digitNeedsUpdate = false;
-  int8_t slotX = getSlotX(curSlot);
+  int slotX = getSlotX(curSlot);
   clearDigit(slotX, SLOT_FRAME_Y);
   drawDigit(slotX, SLOT_FRAME_Y, String(curCode[curSlot]));
 }
 
-void IRAM_ATTR rotaryPushed() {
-  curSlot += 1;
+void drawStatus(int x, int y, String text) {
+  display.setFont(Unibody8Pro_Regular_8);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawString(x, y, text);
+  display.display();
+  curStatus = text;
 }
 
-void IRAM_ATTR rotaryRotate() {
-  rotaryResult = rotary.process();
+void clearStatus(int x, int y, String text) {
+  display.setColor(BLACK);
+  drawStatus(x, y, text);
+  display.setColor(WHITE);
 }
 
-void IRAM_ATTR togglePeriod() {
-  curPeriod = !curPeriod;
+void setStatus(String text) {
+  clearStatus(STATUS_X, STATUS_Y, curStatus);
+  drawStatus(STATUS_X, STATUS_Y, text);
 }
+
+void IRAM_ATTR rotaryPushed() { curSlot += 1; }
+
+void IRAM_ATTR rotaryRotate() { rotaryResult = rotary.process(); }
+
+void IRAM_ATTR togglePeriod() { curPeriod = !curPeriod; }
 
 void setup() {
   pinMode(LED, OUTPUT);
@@ -109,7 +127,8 @@ void setup() {
   // uart
   Serial.begin(115200);
   Serial.setTimeout(2000);
-  while(!Serial) { }
+  while (!Serial) {
+  }
 
   DL("Hello there.");
   blink(1, 100);
@@ -120,6 +139,8 @@ void setup() {
   display.flipScreenVertically();
 
   drawCodeInput(SLOT_FRAME_X, SLOT_FRAME_Y);
+
+  setStatus("LOCKED");
 
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &togglePeriod, true);
@@ -133,7 +154,7 @@ void setup() {
 }
 
 void loop() {
-  uint8_t slotX;
+  unsigned int slotX;
 
   if (curPeriod != lastPeriod) {
     slotX = getSlotX(curSlot);
@@ -152,8 +173,11 @@ void loop() {
 
     // check admin after last slot is filled
     if (curSlot > 2) {
-      isAdmin = (strcmp(curCode, code) == 0);
-      DF("Is admin: %s %s %d\n", curCode, code, isAdmin);
+      isAdmin = (curCode == code);
+
+      setStatus(isAdmin ? "UNLOCKED" : "LOCKED");
+
+      // DF("Is admin: %s %s %d\n", curCode, code, isAdmin);
       curSlot = 0;
     }
 
@@ -162,7 +186,7 @@ void loop() {
   }
 
   if (rotaryResult) {
-    uint8_t nr = (int)curCode[curSlot] - 48;
+    unsigned int nr = (int)curCode[curSlot] - 48;
 
     if (rotaryResult == DIR_CW) {
       if (nr == 9) {
@@ -179,7 +203,7 @@ void loop() {
     }
 
     curCode[curSlot] = (char)(nr + 48);
-    DF("counter: %s\n", curCode);
+    // DF("counter: %s\n", curCode);
     digitNeedsUpdate = true;
     rotaryResult = 0;
   }
