@@ -11,22 +11,21 @@
 #include <Rotary.h>
 #include <Wire.h>
 
-#include "base_functions.h"
 #include "SSD1306Wire.h"
+#include "base_functions.h"
 #include "fonts.h"
-
-#define SLOT_FRAME_WIDTH 25
-#define SLOT_FRAME_HEIGHT 31
-#define SLOT_FRAME_GAP 5
-#define SLOT_FRAME_X 21
-#define SLOT_FRAME_Y 24
-
-#define STATUS_X 0
-#define STATUS_Y 0
+#include "base.h"
 
 SSD1306Wire display(0x3c, SDA, SCL);
 
 Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
+
+const short SLOT_FRAME_GAP = 5;
+const short TOTAL_SLOTS = 3;
+
+const Point STATUS_OFFSET = {0, 0};
+const Point SLOT_FRAME_OFFSET = {21, 24};
+const Dim SLOT_FRAME_DIM = {25, 31};
 
 String code = "007";
 String curCode = "000";
@@ -34,81 +33,81 @@ String curCode = "000";
 unsigned int lastSlot = 0;
 volatile unsigned int curSlot = 0;
 
-unsigned int digitNeedsUpdate = false;
-unsigned int isAdmin = false;
-volatile unsigned int rotaryResult;
+bool digitNeedsUpdate = false;
+bool isAdmin = false;
 
-int lastPeriod = 0;
 volatile int curPeriod = 1;
+int lastPeriod = 0;
 
 String curDigit = "0";
 String curStatus = "LOCKED";
 
+volatile unsigned int rotaryResult;
+
+Box slots[TOTAL_SLOTS];
+
 hw_timer_t *timer = NULL;
 
-int getSlotX(int index) {
-  return SLOT_FRAME_X + index * (SLOT_FRAME_WIDTH + SLOT_FRAME_GAP);
-}
-
-void drawSlotFrame(int x, int y) {
-  display.drawRect(x, y, SLOT_FRAME_WIDTH, SLOT_FRAME_HEIGHT);
+void drawSlotFrame(Box slot) {
+  display.drawRect(slot.x, slot.y, slot.width, slot.height);
   display.display();
 }
 
-void clearSlotFrame(int x, int y) {
+void clearSlotFrame(Box slot) {
   display.setColor(BLACK);
-  drawSlotFrame(x, y);
+  drawSlotFrame(slot);
   display.setColor(WHITE);
 }
 
-void drawDigit(int x, int y, String digit) {
+void drawDigit(Box slot, String digit) {
   display.setFont(Unibody8Pro_Regular_24);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(x + 2, y - 4, digit);
+  display.drawString(slot.x + 2, slot.y - 4, digit);
   display.display();
   curDigit = digit;
 }
 
-void clearDigit(int x, int y) {
+void clearDigit(Box slot) {
   display.setColor(BLACK);
-  drawDigit(x, y, curDigit);
+  drawDigit(slot, curDigit);
   display.setColor(WHITE);
 }
 
-void drawCodeInput(int x, int y) {
-  int y2 = y;
-  int x2 = x;
-  for (int i = 0; i < 3; i++) {
-    drawSlotFrame(x2, y2);
-    drawDigit(x2, y2, String(curCode[i]));
-    x2 += SLOT_FRAME_WIDTH + SLOT_FRAME_GAP;
+void drawCodeInput(Point p) {
+  int x = p.x;
+  for (int i = 0; i < TOTAL_SLOTS; i++) {
+    Box slot = slots[i] = {x, p.y, SLOT_FRAME_DIM.width, SLOT_FRAME_DIM.height};
+    drawSlotFrame(slot);
+    drawDigit(slot, String(curCode[i]));
+    x += SLOT_FRAME_DIM.width + SLOT_FRAME_GAP;
   }
 }
 
 void updateDigit() {
   digitNeedsUpdate = false;
-  int slotX = getSlotX(curSlot);
-  clearDigit(slotX, SLOT_FRAME_Y);
-  drawDigit(slotX, SLOT_FRAME_Y, String(curCode[curSlot]));
+  Box slot = slots[curSlot];
+  clearDigit(slot);
+  drawDigit(slot, String(curCode[curSlot]));
 }
 
-void drawStatus(int x, int y, String text) {
+void drawStatus(Point p, String text) {
   display.setFont(Unibody8Pro_Regular_8);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(x, y, text);
+  display.drawString(p.x, p.y, text);
   display.display();
   curStatus = text;
 }
 
-void clearStatus(int x, int y, String text) {
+void clearStatus(Point p, String text) {
   display.setColor(BLACK);
-  drawStatus(x, y, text);
+  drawStatus(p, text);
   display.setColor(WHITE);
 }
 
 void setStatus(String text) {
-  clearStatus(STATUS_X, STATUS_Y, curStatus);
-  drawStatus(STATUS_X, STATUS_Y, text);
+  Point p = STATUS_OFFSET;
+  clearStatus(p, curStatus);
+  drawStatus(p, text);
 }
 
 void IRAM_ATTR rotaryPushed() { curSlot += 1; }
@@ -138,7 +137,7 @@ void setup() {
   display.init();
   display.flipScreenVertically();
 
-  drawCodeInput(SLOT_FRAME_X, SLOT_FRAME_Y);
+  drawCodeInput(SLOT_FRAME_OFFSET);
 
   setStatus("LOCKED");
 
@@ -154,22 +153,24 @@ void setup() {
 }
 
 void loop() {
-  unsigned int slotX;
+  Box slot;
 
+  // blink frame
   if (curPeriod != lastPeriod) {
-    slotX = getSlotX(curSlot);
+    slot = slots[curSlot];
     if (curPeriod) {
-      clearSlotFrame(slotX, SLOT_FRAME_Y);
+      clearSlotFrame(slot);
     } else {
-      drawSlotFrame(slotX, SLOT_FRAME_Y);
+      drawSlotFrame(slot);
     }
 
     lastPeriod = curPeriod;
   }
 
+  // check if code matches
   if (curSlot != lastSlot) {
-    slotX = getSlotX(lastSlot);
-    drawSlotFrame(slotX, SLOT_FRAME_Y);
+    slot = slots[lastSlot];
+    drawSlotFrame(slot);
 
     // check admin after last slot is filled
     if (curSlot > 2) {
@@ -185,6 +186,7 @@ void loop() {
     lastSlot = curSlot;
   }
 
+  // handle rotary input
   if (rotaryResult) {
     unsigned int nr = (int)curCode[curSlot] - 48;
 
@@ -208,6 +210,7 @@ void loop() {
     rotaryResult = 0;
   }
 
+  // update display
   if (digitNeedsUpdate) {
     updateDigit();
   }
