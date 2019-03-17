@@ -64,3 +64,4 @@ or cloned into the lib directory.
 |------------|------------------------------------------------------------------------------|---------------------|
 | blink.cpp  | Blinking the onboard LED at startup and when using the push button or rotary | [Rotary by buxtronix](https://github.com/buxtronix/arduino/blob/master/libraries/Rotary) |
 | buzzer.cpp | Plays RTTTL strings on a buzzer connected to CN1                             | [ESP32-RTTTL](https://github.com/2ni/ESP32-RTTTL)       |
+| spiffs.cpp | Save data persistently to SPIFFS (in this example ntp timestamp)             | [TIMY](https://github.com/2ni/timy)            |
