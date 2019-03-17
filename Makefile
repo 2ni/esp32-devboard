@@ -1,10 +1,12 @@
-.PHONY: compile st serial ota terminals terminal mqtt test
+.PHONY: compile st serial ota terminals terminal mqtt test format
 
 compile:
 	platformio run
 
 # eg make st port=1
 st: compile serial terminal
+
+fst: compile format serial terminal
 
 serial:
 	@./handle_serial.py --port=$$port
@@ -40,6 +42,9 @@ terminals:
 terminal:
 	@./handle_serial.py --monitor --port=$$port
 	@#platformio device monitor
+
+format:
+	@./handle_serial.py --format --port=$$port
 
 test:
 	@read -p "Do you wish to install this program? " yn; \

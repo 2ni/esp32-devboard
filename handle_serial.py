@@ -11,7 +11,8 @@ from serial.tools import list_ports
 
 parser = argparse.ArgumentParser(description='Handle serial port(s)', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-i', '--info', action='store_true', help='Show info concerning flash')
-parser.add_argument('-f', '--fuse', action='store_true', help='Show fuse info')
+parser.add_argument('--fuse', action='store_true', help='Show fuse info')
+parser.add_argument('-f', '--format', action='store_true', help='Format flash before uploading. Erases SPIFFS too!')
 parser.add_argument('-l', '--list', action='store_true', help='Show available ports and its port number. LOCATION=20-2 means port 2')
 parser.add_argument('-u', '--upload', action='store_true', help='Upload code to port')
 parser.add_argument('-m', '--monitor', action='store_true', help='Open monitor to port')
@@ -68,5 +69,10 @@ if args.monitor:
     exit(0)
 
 # if upload or no argument given
-print 'uploading to {port}'.format(port=port)
-os.system('esptool.py --port {port} erase_flash && platformio run --target upload --upload-port {port}'.format(port=port))
+if args.format:
+    print '********** erasing flash on {port}'.format(port=port)
+    os.system('esptool.py --port {port} erase_flash'.format(port=port))
+    exit(0)
+
+print '********** uploading to {port}'.format(port=port)
+os.system('platformio run --target upload --upload-port {port}'.format(port=port))
