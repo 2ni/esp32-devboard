@@ -15,39 +15,23 @@
 #include <Wire.h>
 #include "SSD1306Wire.h"
 #include "fonts.h"
+
+#include "Rotary.h"
+
 SSD1306Wire display(0x3c, SDA, SCL);
-
 /*
-// depends on https://github.com/davidhrbaty/ArduBot/tree/master/Libraries/TimerFreeTone
-//  https://github.com/mikalhart/Flash
-//  adapt #include <pgmspace.h> in Flash.h
-#include <pgmspace.h>
-#include <Rtttl.h>
-Rtttl Rtttl(LED);
-*/
-
-/*
-#include "SPIFFS.h"
-#include "SD.h"
-#include "FS.h"
-#include "HTTPClient.h"
-#include "AudioFileSourcePROGMEM.h"
-#include "AudioGeneratorRTTTL.h"
-#include "AudioOutputI2S.h"
-*/
-
-/*
-const char * mario = "mario:d=4,o=5,b=100:16e6,16e6,32p,8e6,16c6,8e6,8g6,8p,8g,8p,8c6,16p,8g,16p,8e,16p,8a,8b,16a#,8a,16g.,16e6,16g6,8a6,16f6,8g6,8e6,16c6,16d6,8b,16p,8c6,16p,8g,16p,8e,16p,8a,8b,16a#,8a,16g.,16e6,16g6,8a6,16f6,8g6,8e6,16c6,16d6,8b,8p,16g6,16f#6,16f6,16d#6,16p,16e6,16p,16g#,16a,16c6,16p,16a,16c6,16d6,8p,16g6,16f#6,16f6,16d#6,16p,16e6,16p,16c7,16p,16c7,16c7,p,16g6,16f#6,16f6,16d#6,16p,16e6,16p,16g#,16a,16c6,16p,16a,16c6,16d6,8p,16d#6,8p,16d6,8p,16c6";
-
-const char rudolph[] PROGMEM =
-"Rudolph the Red Nosed Raindeer:d=8,o=5,b=250:g,4a,g,4e,4c6,4a,2g.,g,a,g,a,4g,4c6,2b.,4p,f,4g,f,4d,4b,4a,2g.,g,a,g,a,4g,4a,2e.,4p,g,4a,a,4e,4c6,4a,2g.,g,a,g,a,4g,4c6,2b.,4p,f,4g,f,4d,4b,4a,2g.,g,a,g,a,4g,4d6,2c.6,4p,4a,4a,4c6,4a,4g,4e,2g,4d,4e,4g,4a,4b,4b,2b,4c6,4c6,4b,4a,4g,4f,2d,g,4a,g,4e,4c6,4a,2g.,g,a,g,a,4g,4c6,2b.,4p,f,4g,f,4d,4b,4a,2g.,4g,4a,4g,4a,2g,2d6,1c.6.";
-// Plenty more at: http://mines.lumpylumpy.com/Electronics/Computers/Software/Cpp/MFC/RingTones.RTTTL
-*/
-
-/*
-AudioGeneratorRTTTL *rtttl;
-AudioFileSourcePROGMEM *file;
-AudioOutputI2S *out;
+Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
+int counter = 0;
+void rotate() {
+  unsigned char result = rotary.process();
+  if (result == DIR_CW) {
+    counter++;
+    DF("counter: %d\n", counter);
+  } else if (result == DIR_CCW) {
+    counter--;
+    DF("counter: %d\n", counter);
+  }
+}
 */
 
 void updateTime(String value) {
@@ -79,7 +63,6 @@ void setPeriod(int8_t position) {
 void clearPeriod(int8_t position) {
   display.setColor(BLACK);
   setPeriod(position);
-  DF("clearing: %u\n", position);
   display.setColor(WHITE);
 }
 
@@ -95,23 +78,20 @@ void sec2human(const uint16_t seconds, char *str) {
 }
 
 hw_timer_t * timer = NULL;
-int8_t lastPeriod = 0;
 char countdownString[8] = "";
 char oldCountdownString[8] = "";
 volatile uint16_t countdown;
-volatile int8_t curPeriod = 1;
+volatile int8_t periodVisible, lastPeriodVisible;
+uint8_t period = 0;
+uint8_t lastPeriod = 0;
+
 void IRAM_ATTR togglePeriod() {
-  curPeriod = !curPeriod;
+  periodVisible = !periodVisible;
   countdown--;
 }
 
-
 void setup() {
-
   pinMode(LED, OUTPUT);
-
-  pinMode(I2S_EN, OUTPUT);
-  digitalWrite(I2S_EN, 1); // activate I2S
 
   // uart
   Serial.begin(115200);
@@ -122,11 +102,19 @@ void setup() {
   blink(1, 100);
 
   // connect_to_wifi();
+  countdown = 10;
+  period = ceil(countdown/60);
+  lastPeriod = period;
+  periodVisible = !((countdown/2)%2); // even seconds means show period
+  lastPeriodVisible = !periodVisible;
+
+  // attachInterrupt(digitalPinToInterrupt(ROTARY_A), rotate, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(ROTARY_B), rotate, CHANGE);
 
   display.init();
   display.flipScreenVertically();
 
-  for(int8_t i=0; i<60; i++) {
+  for(int8_t i=0; i<period; i++) {
     setPeriod(i);
   }
 
@@ -134,45 +122,41 @@ void setup() {
   timerAttachInterrupt(timer, &togglePeriod, true);
   timerAlarmWrite(timer, 1e6, true);
   timerAlarmEnable(timer);
-
-  countdown = 3612;
-
-  /*
-  file = new AudioFileSourcePROGMEM( rudolph, strlen_P(rudolph) );
-  out = new AudioOutputI2S();
-  out->SetPinout(I2S_SCK, I2S_LRCK, I2S_DIN);
-  float volume = 0.1;
-  out->SetGain((float)volume);
-  rtttl = new AudioGeneratorRTTTL();
-  rtttl->begin(file, out);
-  */
-
-  // Rtttl.play(mario);
-
 }
 
 void loop() {
-  if (curPeriod != lastPeriod) {
+  if (periodVisible != lastPeriodVisible) {
     sec2human(countdown, countdownString);
     clearTime(oldCountdownString);
     updateTime(countdownString);
     strncpy(oldCountdownString, countdownString, strlen(countdownString));
 
-    if (curPeriod) {
-      clearPeriod(59);
-    } else {
-      setPeriod(59);
+    period = ceil(countdown/60); // update num periods shown
+    // DF("******* countdown: %u, period: %u, lastPeriod: %u\n", countdown, period, lastPeriod);
+
+    if (period != lastPeriod) {
+      clearPeriod(lastPeriod);
+      lastPeriod = period;
+      periodVisible = !periodVisible;
     }
-    lastPeriod = curPeriod;
+
+    // toggle last period
+    if (periodVisible) {
+      clearPeriod(period);
+    } else {
+      setPeriod(period);
+    }
+    lastPeriodVisible = periodVisible;
   }
 
-  /*
-  if (rtttl->isRunning()) {
-    if (!rtttl->loop()) {
-      rtttl->stop();
-      digitalWrite(I2S_EN, 0); // deactivate I2S
-    }
+  if (!countdown) {
+    timerAlarmDisable(timer);
+    display.clear();
+    display.setFont(Unibody8Pro_Regular_24);
+    display.setTextAlignment(TEXT_ALIGN_CENTER); // coords define center of text
+    display.drawString(64, 12, String("BOOOM!"));
+    display.drawRect(0,0,128,64);
+    display.display();
+    while(1);
   }
-  */
-  // Rtttl.updateMelody();
 }
