@@ -1,6 +1,8 @@
 #ifndef ESP32DEVBOARD_BASE_FUNCTIONS
 #define ESP32DEVBOARD_BASE_FUNCTIONS
 
+// debug macros
+// to output Strings use <string>.c_str()
 #define D(x) Serial.print(x)
 #define DL(x) {Serial.println(x);}
 #define DF(...) Serial.printf(__VA_ARGS__);
