@@ -1,8 +1,8 @@
-#ifndef lock_h
-#define lock_h
+#ifndef base_h
+#define base_h
 
 typedef struct Point Point;
-typedef struct Dim Dim;
+typedef struct Dimension Dimension;
 typedef struct Box Box;
 
 struct Point
@@ -11,7 +11,7 @@ struct Point
   int y;
 };
 
-struct Dim
+struct Dimension
 {
   int width;
   int height;
@@ -24,4 +24,5 @@ struct Box
   int width;
   int height;
 };
+
 #endif

@@ -10,11 +10,12 @@
 #include <Arduino.h>
 #include <Rotary.h>
 #include <Wire.h>
+#include <SSD1306Wire.h>
 
-#include "SSD1306Wire.h"
 #include "base_functions.h"
 #include "fonts.h"
 #include "base.h"
+#include "Draw.h"
 
 SSD1306Wire display(0x3c, SDA, SCL);
 
@@ -25,7 +26,7 @@ const short TOTAL_SLOTS = 3;
 
 const Point STATUS_OFFSET = {0, 0};
 const Point SLOT_FRAME_OFFSET = {21, 24};
-const Dim SLOT_FRAME_DIM = {25, 31};
+const Dimension SLOT_FRAME_DIM = {25, 31};
 
 String code = "007";
 String curCode = "000";
@@ -46,48 +47,31 @@ volatile unsigned int rotaryResult;
 
 Box slots[TOTAL_SLOTS];
 
+Draw draw = Draw(&display);
+
 hw_timer_t *timer = NULL;
-
-void drawSlotFrame(Box slot) {
-  display.drawRect(slot.x, slot.y, slot.width, slot.height);
-  display.display();
-}
-
-void clearSlotFrame(Box slot) {
-  display.setColor(BLACK);
-  drawSlotFrame(slot);
-  display.setColor(WHITE);
-}
-
-void drawDigit(Box slot, String digit) {
-  display.setFont(Unibody8Pro_Regular_24);
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(slot.x + 2, slot.y - 4, digit);
-  display.display();
-  curDigit = digit;
-}
-
-void clearDigit(Box slot) {
-  display.setColor(BLACK);
-  drawDigit(slot, curDigit);
-  display.setColor(WHITE);
-}
 
 void drawCodeInput(Point p) {
   int x = p.x;
+  int y = p.y;
+  int width = SLOT_FRAME_DIM.width;
+  int height = SLOT_FRAME_DIM.height;
+
   for (int i = 0; i < TOTAL_SLOTS; i++) {
-    Box slot = slots[i] = {x, p.y, SLOT_FRAME_DIM.width, SLOT_FRAME_DIM.height};
-    drawSlotFrame(slot);
-    drawDigit(slot, String(curCode[i]));
-    x += SLOT_FRAME_DIM.width + SLOT_FRAME_GAP;
+    Box slot = slots[i] = {x, y, width, height};
+    draw.drawSlotFrame(slot);
+    curDigit = String(curCode[i]);
+    draw.drawDigit(slot, curDigit);
+    x += width + SLOT_FRAME_GAP;
   }
 }
 
 void updateDigit() {
   digitNeedsUpdate = false;
   Box slot = slots[curSlot];
-  clearDigit(slot);
-  drawDigit(slot, String(curCode[curSlot]));
+  draw.clearDigit(slot, curDigit);
+  curDigit = String(curCode[curSlot]);
+  draw.drawDigit(slot, curDigit);
 }
 
 void drawStatus(Point p, String text) {
@@ -159,9 +143,9 @@ void loop() {
   if (curPeriod != lastPeriod) {
     slot = slots[curSlot];
     if (curPeriod) {
-      clearSlotFrame(slot);
+      draw.clearSlotFrame(slot);
     } else {
-      drawSlotFrame(slot);
+      draw.drawSlotFrame(slot);
     }
 
     lastPeriod = curPeriod;
@@ -170,7 +154,7 @@ void loop() {
   // check if code matches
   if (curSlot != lastSlot) {
     slot = slots[lastSlot];
-    drawSlotFrame(slot);
+    draw.drawSlotFrame(slot);
 
     // check admin after last slot is filled
     if (curSlot > 2) {
