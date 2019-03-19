@@ -4,7 +4,12 @@ if [ -n "$1" ]
 then
   answer=$1
 else
-  esps=`nmap -sn 192.168.1.*|grep -i esp_|perl -pe 's/.* (esp_[^ ]*) \(([^)]*)\)/$1: $2/i'`
+  # use https://apple.stackexchange.com/questions/20547/how-do-i-find-my-ip-address-from-the-command-line
+  # to automatically detect ip to upload
+  network=`./ip_address.sh |cut -f 1-3 -d .`
+  network="$network.*"
+  echo "scanning $network"
+  esps=`nmap -sn $network|grep -i esp_|perl -pe 's/.* (esp_[^ ]*) \(([^)]*)\)/$1: $2/i'`
   number_of_esps=`echo "$esps"|wc -l`
   if [ "$number_of_esps" -gt "1" ]
   then
