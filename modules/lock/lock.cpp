@@ -9,70 +9,33 @@
 
 #include <Arduino.h>
 #include <Rotary.h>
-#include <Wire.h>
 #include <SSD1306Wire.h>
+#include <Wire.h>
 
+#include "LockCode.h"
+#include "base.h"
 #include "base_functions.h"
 #include "fonts.h"
-#include "base.h"
-#include "Draw.h"
 
 SSD1306Wire display(0x3c, SDA, SCL);
 
 Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 
-const short SLOT_FRAME_GAP = 5;
-const short TOTAL_SLOTS = 3;
-
 const Point STATUS_OFFSET = {0, 0};
-const Point SLOT_FRAME_OFFSET = {21, 24};
-const Dimension SLOT_FRAME_DIM = {25, 31};
 
-String code = "007";
-String curCode = "000";
-
-unsigned int lastSlot = 0;
-volatile unsigned int curSlot = 0;
-
-bool digitNeedsUpdate = false;
 bool isAdmin = false;
 
 volatile int curPeriod = 1;
 int lastPeriod = 0;
 
-String curDigit = "0";
 String curStatus = "LOCKED";
 
+volatile unsigned int rotaryPushed;
 volatile unsigned int rotaryResult;
 
-Box slots[TOTAL_SLOTS];
-
-Draw draw = Draw(&display);
+LockCode lockCode = LockCode(&display);
 
 hw_timer_t *timer = NULL;
-
-void drawCodeInput(Point p) {
-  int x = p.x;
-  int y = p.y;
-  int width = SLOT_FRAME_DIM.width;
-  int height = SLOT_FRAME_DIM.height;
-
-  for (int i = 0; i < TOTAL_SLOTS; i++) {
-    Box slot = slots[i] = {x, y, width, height};
-    draw.drawSlotFrame(slot);
-    curDigit = String(curCode[i]);
-    draw.drawDigit(slot, curDigit);
-    x += width + SLOT_FRAME_GAP;
-  }
-}
-
-void updateDigit() {
-  digitNeedsUpdate = false;
-  Box slot = slots[curSlot];
-  draw.clearDigit(slot, curDigit);
-  curDigit = String(curCode[curSlot]);
-  draw.drawDigit(slot, curDigit);
-}
 
 void drawStatus(Point p, String text) {
   display.setFont(Unibody8Pro_Regular_8);
@@ -94,9 +57,8 @@ void setStatus(String text) {
   drawStatus(p, text);
 }
 
-void IRAM_ATTR rotaryPushed() { curSlot += 1; }
-
-void IRAM_ATTR rotaryRotate() { rotaryResult = rotary.process(); }
+void IRAM_ATTR onRotaryPushed() { rotaryPushed = true; }
+void IRAM_ATTR onRotaryRotate() { rotaryResult = rotary.process(); }
 
 void IRAM_ATTR togglePeriod() { curPeriod = !curPeriod; }
 
@@ -121,7 +83,7 @@ void setup() {
   display.init();
   display.flipScreenVertically();
 
-  drawCodeInput(SLOT_FRAME_OFFSET);
+  lockCode.setup();
 
   setStatus("LOCKED");
 
@@ -130,72 +92,46 @@ void setup() {
   timerAlarmWrite(timer, 5e5, true);
   timerAlarmEnable(timer);
 
-  attachInterrupt(digitalPinToInterrupt(ROTARY_BUTTON), rotaryPushed, RISING);
+  attachInterrupt(digitalPinToInterrupt(ROTARY_BUTTON), onRotaryPushed, RISING);
 
-  attachInterrupt(digitalPinToInterrupt(ROTARY_A), rotaryRotate, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ROTARY_B), rotaryRotate, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ROTARY_A), onRotaryRotate, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ROTARY_B), onRotaryRotate, CHANGE);
 }
 
 void loop() {
-  Box slot;
-
   // blink frame
   if (curPeriod != lastPeriod) {
-    slot = slots[curSlot];
     if (curPeriod) {
-      draw.clearSlotFrame(slot);
+      lockCode.clearCurrentSlotFrame();
     } else {
-      draw.drawSlotFrame(slot);
+      lockCode.drawCurrentSlotFrame();
     }
 
     lastPeriod = curPeriod;
   }
 
-  // check if code matches
-  if (curSlot != lastSlot) {
-    slot = slots[lastSlot];
-    draw.drawSlotFrame(slot);
-
-    // check admin after last slot is filled
-    if (curSlot > 2) {
-      isAdmin = (curCode == code);
-
+  if (rotaryPushed) {
+    if (lockCode.isLastSlot()) {
+      isAdmin = lockCode.checkCode();
       setStatus(isAdmin ? "UNLOCKED" : "LOCKED");
-
-      // DF("Is admin: %s %s %d\n", curCode, code, isAdmin);
-      curSlot = 0;
+      if (!isAdmin) {
+        lockCode.selectSlot(0);
+      }
+    } else {
+      lockCode.nextSlot();
     }
 
-    digitNeedsUpdate = true;
-    lastSlot = curSlot;
+    rotaryPushed = false;
   }
 
   // handle rotary input
   if (rotaryResult) {
-    unsigned int nr = (int)curCode[curSlot] - 48;
-
     if (rotaryResult == DIR_CW) {
-      if (nr == 9) {
-        nr = 0;
-      } else {
-        nr++;
-      }
+      lockCode.countUp();
     } else if (rotaryResult == DIR_CCW) {
-      if (nr == 0) {
-        nr = 9;
-      } else {
-        nr--;
-      }
+      lockCode.countDown();
     }
 
-    curCode[curSlot] = (char)(nr + 48);
-    // DF("counter: %s\n", curCode);
-    digitNeedsUpdate = true;
     rotaryResult = 0;
-  }
-
-  // update display
-  if (digitNeedsUpdate) {
-    updateDigit();
   }
 }

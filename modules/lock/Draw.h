@@ -9,8 +9,11 @@
 class Draw {
 private:
   SSD1306Wire *display;
+
 public:
+  Draw();
   Draw(SSD1306Wire *display);
+
   void setDisplay(SSD1306Wire *display);
   void drawSlotFrame(Box slot);
   void clearSlotFrame(Box slot);
