@@ -34,9 +34,13 @@ void LockCode::updateDigit() {
   draw.drawDigit(slot, curDigit);
 }
 
-void LockCode::drawCurrentSlotFrame() { draw.drawSlotFrame(slots[curSlot]); }
+void LockCode::drawCurrentSlotFrame() {
+  draw.drawSlotFrame(slots[curSlot]);
+}
 
-void LockCode::clearCurrentSlotFrame() { draw.clearSlotFrame(slots[curSlot]); }
+void LockCode::clearCurrentSlotFrame() {
+  draw.clearSlotFrame(slots[curSlot]);
+}
 
 void LockCode::selectSlot(unsigned int index) {
   drawCurrentSlotFrame();
@@ -73,62 +77,17 @@ void LockCode::countDown() {
   setDigit(nr);
 }
 
-void LockCode::setCode(String code) { this->code = code; }
+void LockCode::setCode(String code) {
+  this->code = code;
+}
 
-bool LockCode::checkCode() { return (curCode == code); }
+bool LockCode::checkCode() {
+  return (curCode == code);
+}
 
-void LockCode::setup() { drawCodeInput(SLOT_FRAME_OFFSET); }
+void LockCode::setup() {
+  drawCodeInput(SLOT_FRAME_OFFSET);
+}
 
 void LockCode::loop() {
-  /*
-  Box slot;
-
-  // check if code matches
-  if (curSlot != lastSlot) {
-    slot = slots[lastSlot];
-    draw.drawSlotFrame(slot);
-
-    // check admin after last slot is filled
-    if (curSlot > 2) {
-      isAdmin = (curCode == code);
-
-      setStatus(isAdmin ? "UNLOCKED" : "LOCKED");
-
-      // DF("Is admin: %s %s %u\n", curCode, code, isAdmin);
-      curSlot = 0;
-    }
-
-    digitNeedsUpdate = true;
-    lastSlot = curSlot;
-  }
-
-  // handle rotary input
-  if (rotaryResult) {
-    unsigned int nr = (int)curCode[curSlot] - 48;
-
-    if (rotaryResult == DIR_CW) {
-      if (nr == 9) {
-        nr = 0;
-      } else {
-        nr++;
-      }
-    } else if (rotaryResult == DIR_CCW) {
-      if (nr == 0) {
-        nr = 9;
-      } else {
-        nr--;
-      }
-    }
-
-    curCode[curSlot] = (char)(nr + 48);
-    // DF("counter: %s\n", curCode);
-    digitNeedsUpdate = true;
-    rotaryResult = 0;
-  }
-
-  // update display
-  if (digitNeedsUpdate) {
-    updateDigit();
-  }
-  */
 }

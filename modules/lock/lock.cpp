@@ -57,10 +57,16 @@ void setStatus(String text) {
   drawStatus(p, text);
 }
 
-void IRAM_ATTR onRotaryPushed() { rotaryPushed = true; }
-void IRAM_ATTR onRotaryRotate() { rotaryResult = rotary.process(); }
+void IRAM_ATTR onRotaryPushed() {
+  rotaryPushed = true;
+}
+void IRAM_ATTR onRotaryRotate() {
+  rotaryResult = rotary.process();
+}
 
-void IRAM_ATTR togglePeriod() { curPeriod = !curPeriod; }
+void IRAM_ATTR togglePeriod() {
+  curPeriod = !curPeriod;
+}
 
 void setup() {
   pinMode(LED, OUTPUT);
