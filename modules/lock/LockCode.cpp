@@ -8,7 +8,7 @@ LockCode::LockCode(SSD1306Wire *display) {
 
 void LockCode::setDisplay(SSD1306Wire *display) {
   draw.setDisplay(display);
-  display = display;
+  this->display = display;
 }
 
 void LockCode::drawCodeInput(Point p) {
