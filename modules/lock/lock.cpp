@@ -12,6 +12,7 @@
 #include <SSD1306Wire.h>
 #include <Wire.h>
 
+#include "ViewManager.h"
 #include "LockCode.h"
 #include "base.h"
 #include "base_functions.h"
@@ -33,6 +34,7 @@ String curStatus = "LOCKED";
 volatile unsigned int rotaryPushed;
 volatile unsigned int rotaryResult;
 
+ViewManager viewManager = ViewManager(&display);
 LockCode lockCode = LockCode(&display);
 
 hw_timer_t *timer = NULL;
