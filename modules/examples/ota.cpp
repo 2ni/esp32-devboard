@@ -26,7 +26,7 @@ void setup() {
   DL("Hello there.");
   blink(1, 100);
 
-  connect_to_wifi();
+  connect_to_wifi("myPrecious");
 
   #ifdef USE_DISPLAY
   DL("use display");
@@ -34,7 +34,7 @@ void setup() {
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_24);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.drawString(64, 20, String("OTA demo"));
+  display.drawString(display.getWidth()/2, display.getHeight()/2-12, String("OTA demo"));
   display.display();
   #endif
 
@@ -54,26 +54,37 @@ void setup() {
     #ifdef USE_DISPLAY
     display.clear();
     char msg[16] = "Starting OTA";
-    display.drawString(64, 20, msg);
+    display.drawString(display.getWidth()/2, display.getHeight()/2-12, msg);
     display.display();
     #endif
   });
   ArduinoOTA.onEnd([]() {
     #ifdef USE_DISPLAY
     display.clear();
+    display.display();
     #endif
     DL("\nEnd OTA");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    DF("Progress: %u%%\r", (progress / (total / 100)));
+    DF("%u%%\r", (progress/(total/100)));
     #ifdef USE_DISPLAY
     char msg[16];
-    sprintf(msg, "Progress: %d", (progress/(total/100)));
-    display.drawString(64, 20, msg);
+    sprintf(msg, "%d%%", (progress/(total/100)));
+    display.clear();
+    display.drawString(display.getWidth()/2, display.getHeight()/2-12, msg);
+    // x, y, width, height, progress
+    display.drawProgressBar(4, 50, 120, 10, progress/(total/100) );
     display.display();
     #endif
   });
   ArduinoOTA.onError([](ota_error_t error) {
+    #ifdef USE_DISPLAY
+    char msg[16];
+    sprintf(msg, "Error: %u", error);
+    display.clear();
+    display.drawString(display.getWidth()/2, 5, msg);
+    display.display();
+    #endif
     DF("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) { DL("Auth Failed"); }
     else if (error == OTA_BEGIN_ERROR) { DL("Begin Failed"); }
