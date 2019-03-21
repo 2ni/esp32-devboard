@@ -53,7 +53,7 @@
 void blink(int amount=3, int duration=100);
 
 #define WIFI_TIMEOUT 10e3
-extern char nodename[20];
 int connect_to_wifi();
+int connect_to_wifi(const char *nodename);
 
 #endif

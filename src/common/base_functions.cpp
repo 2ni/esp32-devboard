@@ -7,7 +7,6 @@
 #include "base_functions.h"
 
 WiFiMulti wifiMulti;
-char nodename[20] = "";
 
 /*
  * blink LED <amount> of times and on/off <duration> ms
@@ -28,8 +27,26 @@ void blink(int amount, int duration) {
  * static const char*  WIFI_CREDS[] = {"ssid1", "pw1", "ssid2", ..., NULL}
  */
 int connect_to_wifi() {
+  char nodename[20] = "";
+
+  uint64_t chipid = ESP.getEfuseMac();
+  unsigned int l = sprintf(nodename, "ESP_%llx", chipid);
+  nodename[l] = '\0';
+
+  return connect_to_wifi(nodename);
+}
+
+/*
+ * setting the hostname requires formatting the memory
+ * run "make fst" when hostname is change
+ */
+int connect_to_wifi(const char *givenNodename) {
+  DL("Connecting... ");
+  char nodename[20] = "";
+  strcpy(nodename, givenNodename);
+
   for (int i=0; WIFI_CREDS[i] != NULL; i+=2) {
-    //DF("i: %i, ssid: %s, pw: %s\n", i, WIFI_CREDS[i], WIFI_CREDS[i+1]);
+    // DF("i: %i, ssid: %s, pw: %s\n", i, WIFI_CREDS[i], WIFI_CREDS[i+1]);
     wifiMulti.addAP(WIFI_CREDS[i], WIFI_CREDS[i+1]);
   }
 
@@ -39,37 +56,21 @@ int connect_to_wifi() {
     return 1;
   }
 
-  uint64_t chipid = ESP.getEfuseMac();
-  unsigned int l = sprintf(nodename, "ESP_%llx", chipid);
-  nodename[l] = '\0';
-
-  DL();
-  DF("Hello from %s\n", nodename);
-  D("Connecting");
-
   WiFi.mode(WIFI_STA); // default is WIFI_AP_STA
-  WiFi.setHostname(nodename); // must be called as very 1st but with wifi on
-  unsigned long startMillis = millis();
+  // must be called as very 1st but with wifi on
+  if (!WiFi.setHostname(nodename)) {
+    DL("Setting hostname failed");
+  }
 
-  while (wifiMulti.run() != WL_CONNECTED) {
-    delay(250);
-    D(".");
-    if (millis() - startMillis > WIFI_TIMEOUT) {
-      DL("Timeout connecting to WiFi...");
-      return 0;
+  if (wifiMulti.run() == WL_CONNECTED) {
+    DF("Connected to %s with %s (%s)\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), WiFi.getHostname());
+
+    // setup MDNS
+    if (MDNS.begin(nodename)) {
+      DF("MDNS server started on http://%s.local\n\r", nodename);
     }
+    return 1;
+  } else {
+    return 0;
   }
-
-  D(" connected to ");
-  Serial.print(WiFi.SSID());
-
-  D(". IP address: ");
-  DL(WiFi.localIP());
-
-  // setup MDNS
-  if (MDNS.begin(nodename)) {
-    DF("mdns server started on http://%s.local\n\r", nodename);
-  }
-
-  return 1;
 }
