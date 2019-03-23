@@ -11,32 +11,69 @@
 Rotary rotary = Rotary(ROTARY_A, ROTARY_B);
 int counter = 0;
 
-volatile int buttonState = 0;
 hw_timer_t * timer = NULL;
+hw_timer_t * timerPush = NULL;
+
+typedef enum {
+  NO_PRESS,
+  LONG_PRESS,
+  SHORT_PRESS,
+} pushMode;
+
+pushMode rotaryMode = NO_PRESS;
 
 void IRAM_ATTR resetLED() {
   digitalWrite(LED, 0);
 }
 
-void IRAM_ATTR handleLED() {
+void IRAM_ATTR handleLED(int us) {
   digitalWrite(LED, 1);
-  // 1 tick = 1us
-  timer = timerBegin(0, 80, true);
+  timer = timerBegin(0, 80, true); // 1 tick = 1us with pre divider of 80MHz
   timerAttachInterrupt(timer, &resetLED, true);
-  timerAlarmWrite(timer, 100000, false);
+  timerAlarmWrite(timer, us, false);
   timerAlarmEnable(timer);
 }
 
+void IRAM_ATTR handleLED() {
+  handleLED(1e5);
+}
+
 void IRAM_ATTR buttonPushed() {
-  // buttonState = digitalRead(BUTTON);
   handleLED();
   DL("Button pushed");
 }
 
+void IRAM_ATTR longPress() {
+  rotaryMode = LONG_PRESS;
+  DL("long");
+}
+
+/*
+ * short press on release
+ * long press on timeout
+ */
 void IRAM_ATTR rotaryPushed() {
-  // buttonState = digitalRead(ROTARY_BUTTON);
-  handleLED();
-  DL("Rotary button pushed");
+  int v = digitalRead(ROTARY_BUTTON);
+  // push (RISING)
+  if (v) {
+    rotaryMode = NO_PRESS;
+    handleLED();
+
+    // start timer for potential long push
+    timerPush = timerBegin(1, 80, true);
+    timerAttachInterrupt(timerPush, &longPress, true);
+    timerAlarmWrite(timerPush, 5e5, false); // 500ms timeout for long press
+    timerAlarmEnable(timerPush);
+
+  // release (FALLING)
+  } else {
+    timerAlarmDisable(timerPush); // long push was not reached
+    // timerWrite(timerPush, 0); // reset timer
+    if (rotaryMode != LONG_PRESS) {
+      rotaryMode = SHORT_PRESS;
+      DL("short");
+    }
+  }
 }
 
 void rotate() {
@@ -65,12 +102,12 @@ void setup() {
   while(!Serial) { }
 
   DL("Hello there.");
-  blink(3, 300);
+  blink(1, 100);
 
   // connect_to_wifi();
 
   attachInterrupt(digitalPinToInterrupt(BUTTON), buttonPushed, RISING);
-  attachInterrupt(digitalPinToInterrupt(ROTARY_BUTTON), rotaryPushed, RISING);
+  attachInterrupt(digitalPinToInterrupt(ROTARY_BUTTON), rotaryPushed, CHANGE);
 
   attachInterrupt(digitalPinToInterrupt(ROTARY_A), rotate, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ROTARY_B), rotate, CHANGE);
