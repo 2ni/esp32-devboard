@@ -22,7 +22,7 @@ void buttonPressed(Button::pushType type) {
   }
 }
 
-Button button = Button(BUTTON_ROTARY, LED, buttonPressed);
+Button button = Button(ROTARY_BUTTON, LED, buttonPressed);
 
 void rotate() {
   unsigned char result = rotary.process();
