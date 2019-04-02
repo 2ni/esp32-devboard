@@ -1,7 +1,10 @@
-.PHONY: compile st serial ota terminals terminal mqtt test format
+.PHONY: compile st serial ota terminals terminal mqtt test format clean
 
 compile:
-	platformio run
+	pio run
+
+clean:
+	pio run -t clean
 
 # eg make st port=1
 st: compile serial terminal
@@ -11,7 +14,7 @@ fst: compile format serial terminal
 serial:
 	@./handle_serial.py --port=$$port
 	@#esptool.py --port `python -m serial.tools.list_ports 2>/dev/null|grep "usb"` erase_flash
-	@#platformio run --target upload
+	@#pio run --target upload
 
 # available esp nodes. Their name must beginn with "esp-xy"
 # @ suppresses output of command run
@@ -37,11 +40,11 @@ fuse:
 
 terminals:
 	@./handle_serial.py --list --port=$$port
-	@#platformio device list
+	@#pio device list
 
 terminal:
 	@./handle_serial.py --monitor --port=$$port
-	@#platformio device monitor
+	@#pio device monitor
 
 format:
 	@./handle_serial.py --format --port=$$port
