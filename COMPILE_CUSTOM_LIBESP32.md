@@ -10,7 +10,7 @@ git clone git@github.com:espressif/esp-idf.git
 cd esp-idf
 pyenv virtualenv esp-idf
 pyenv activate esp-idf
-python -r requirements.txt
+pip install -r requirements.txt
 export IDF_PATH=/www/esp-idf
 ```
 
@@ -26,6 +26,7 @@ export PATH=/www/esp-idf/toolchain/xtensa-esp32-elf/bin:$PATH
 # Use [example](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/#get-started-get-packages) to compile
 ```
 cd /www/esp-idf
+git submodule update --init
 cp -r examples/get-started/hello_world .
 cd hello_world
 cp ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/sdkconfig .
