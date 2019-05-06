@@ -3,7 +3,14 @@ Compiling custom libesp32.a to be used with Platformio. [Based on this thread](h
 
 It's not yet fully working. There are still compiling issues when building the project in platformio with the adapted libesp32.a
 
+It might work just editing ~./platformio/packages/framework-arduinoespressif32/tools/sdk/include/config/sdkconfig.h
+```
+#define CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL 1
+(replacing CONFIG_ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC)
+```
+
 # [Install esp-idf](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/) & python
+esp-idf version used in platformio: vi platforms/espressif32/platform.json -> framework-espidf/version, eg ~3.30200.190418
 ```
 cd /www
 git clone git@github.com:espressif/esp-idf.git
@@ -11,6 +18,7 @@ cd esp-idf
 pyenv virtualenv esp-idf
 pyenv activate esp-idf
 pip install -r requirements.txt
+git submodule update --init
 export IDF_PATH=/www/esp-idf
 ```
 
@@ -26,12 +34,12 @@ export PATH=/www/esp-idf/toolchain/xtensa-esp32-elf/bin:$PATH
 # Use [example](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/#get-started-get-packages) to compile
 ```
 cd /www/esp-idf
-git submodule update --init
 cp -r examples/get-started/hello_world .
 cd hello_world
 cp ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/sdkconfig .
 <change settings, eg CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL>
 
+make clean
 make
 ```
 
