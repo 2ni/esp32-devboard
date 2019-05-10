@@ -8,6 +8,7 @@ clean:
 
 # eg make st port=1
 st: compile serial terminal
+stt: compile serial terminalt
 
 fst: compile format serial terminal
 
@@ -45,6 +46,9 @@ terminals:
 terminal:
 	@./handle_serial.py --monitor --port=$$port
 	@#pio device monitor
+
+terminalt:
+	@./handle_serial.py --monitor --port=$$port | ./ts
 
 format:
 	@./handle_serial.py --format --port=$$port

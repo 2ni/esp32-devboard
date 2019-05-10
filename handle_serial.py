@@ -23,7 +23,7 @@ args = parser.parse_args()
 ports = {}
 for port in list_ports.comports():
     if 'USB' in port.description:
-        desc = '{port.device} - {port.hwid}'.format(port=port)
+        desc = '{port.device} | {port.hwid}'.format(port=port)
         ports[re.sub('^.*-(\d)$', r'\1', port.hwid)] = desc
         if args.list:
             print desc
@@ -53,7 +53,7 @@ else:
 
         selectedport = ports[var]
 
-port = re.sub('^([^-]+).*$', r'\1', selectedport)
+port = re.sub('^([^|]+).*$', r'\1', selectedport)
 
 if args.info:
     os.system('esptool.py --port {port} flash_id'.format(port=port))
