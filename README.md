@@ -1,3 +1,10 @@
+# Installation
+```
+pyenv virtualenv 3.7.4 esp32
+pyenv local esp32
+pip intall -r requirements.txt
+```
+
 # Summary
 This is a custom dev board based on the ESP32 and platformio. It can be connected to the computer via usb for programming and includes base periphery.
 
