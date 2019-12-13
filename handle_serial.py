@@ -26,10 +26,10 @@ ports = {}
 for port in list_ports.comports():
     if 'USB' in port.description:
         desc = '{port.device} | {port.hwid}'.format(port=port)
-        pos = re.sub(r'^.*-(\d)$', r'\1', port.hwid)
-        if not ports.get(pos):
-            ports[pos] = desc
-
+        port_number = re.sub(r'^.*-(\d)$', r'\1', port.hwid)
+        # get the 1st port (quickfix for wchusbserial1430 vs husbserial-1430
+        if re.search(r'\.wchusb', desc):
+            ports[port_number] = desc
         if args.list:
             print(desc)
 

@@ -1,8 +1,7 @@
 # Installation
 
 1. Install OS X driver
-
-    `https://github.com/adrianmihalko/ch340g-ch34g-ch34x-mac-os-x-driver/blob/master/CH34x_Install_V1.5.pkg`
+   `https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all#mac-osx`
 
 
 2. Install platformio
