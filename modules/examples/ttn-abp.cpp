@@ -30,6 +30,8 @@
  *******************************************************************************/
 
 /*
+ * uses https://github.com/matthijskooijman/arduino-lmic in lib/
+ *
  * payload convention: https://www.thethingsnetwork.org/forum/t/best-practices-to-limit-application-payloads/1302
  * payload converter: https://www.mobilefish.com/developer/lorawan/lorawan_quickguide_build_lora_node_rfm95_arduino_uno.html
  *
