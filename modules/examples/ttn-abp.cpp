@@ -34,6 +34,14 @@
  *
  * payload convention: https://www.thethingsnetwork.org/forum/t/best-practices-to-limit-application-payloads/1302
  * payload converter: https://www.mobilefish.com/developer/lorawan/lorawan_quickguide_build_lora_node_rfm95_arduino_uno.html
+ *   function Decoder(bytes, port) {
+ *    var result = "";
+ *    for (i=0; i<bytes.length; i++) {
+ *      result +=  (String.fromCharCode(bytes[i]));
+ *    }
+ *
+ *    return {text: result};
+ *  }
  *
  * change the following in the library
  * ./hal/hal.cpp:81:    SPI.begin(14, 12, 13);
@@ -60,15 +68,15 @@
 // LoRaWAN NwkSKey, network session key
 // This is the default Semtech key, which is used by the early prototype TTN
 // network.
-static const PROGMEM u1_t NWKSKEY[16] = {}; // set your key
+static const PROGMEM u1_t NWKSKEY[16] = {};
 
 // LoRaWAN AppSKey, application session key
 // This is the default Semtech key, which is used by the early prototype TTN
 // network.
-static const u1_t PROGMEM APPSKEY[16] = {}; // set your key
+static const u1_t PROGMEM APPSKEY[16] = {};
 
 // LoRaWAN end-device address (DevAddr)
-static const u4_t DEVADDR = 0x00; // set/change this address for every node!
+static const u4_t DEVADDR = 0x00000000; // set/change this address for every node!
 
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
@@ -174,6 +182,7 @@ void setup() {
     Serial.println(F("Starting"));
 
     pinMode(LED, OUTPUT);
+    blink(1, 100);
 
     /*
     pinMode(RFM_CS, OUTPUT);
@@ -276,6 +285,8 @@ void setup() {
 
     // Disable link check validation
     LMIC_setLinkCheckMode(0);
+
+    LMIC.txpow = 27; // maximum power
 
     // TTN uses SF9 for its RX2 window.
     LMIC.dn2Dr = DR_SF9;
