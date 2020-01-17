@@ -1,4 +1,4 @@
-.PHONY: compile st serial ota terminals terminal mqtt test format clean
+.PHONY: compile st serial ota terminals terminal mqtt test format clean erase
 
 compile:
 	pio run
@@ -12,6 +12,8 @@ stt: compile serial terminalt
 
 fst: compile format serial terminal
 
+erase:
+	@./handle_serial.py --port=$$port -f
 serial:
 	@./handle_serial.py --port=$$port
 	@#esptool.py --port `python -m serial.tools.list_ports 2>/dev/null|grep "usb"` erase_flash
