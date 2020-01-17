@@ -4,10 +4,14 @@
  */
 
 #include <Arduino.h>
+// #include <WiFi.h>
 #include "base_functions.h"
 
 void setup() {
-
+  /*
+  WiFi.mode(WIFI_OFF);
+  btStop();
+  */
   pinMode(LED, OUTPUT);
 
   // uart
@@ -20,6 +24,7 @@ void setup() {
 }
 
 void loop() {
+  DL("blink")
   blink(2, 100);
   delay(1000);
 }
