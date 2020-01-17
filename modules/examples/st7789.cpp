@@ -48,13 +48,25 @@ void setup() {
 
   tft.init(240, 240);
 
+  // clear and turn on screen
   tft.fillScreen(BLACK);
-
-  // turn on screen
   digitalWrite(BLK, 1);
 
-  DL("draw rect with cross");
+  tft.setRotation(3);
 
+  DL("draw text");
+  String output = "X Fingers";
+  int16_t x1, y1;
+  uint16_t output_width, output_height;
+
+  // center it
+  tft.setTextSize(3);
+  tft.getTextBounds(output, 0, 0, &x1, &y1, &output_width, &output_height);
+  tft.setTextColor(YELLOW);
+  tft.setCursor((240-output_width)/2, 20); // x, y
+  tft.println(output);
+
+  DL("draw rect with cross");
   uint16_t colors[7] = { YELLOW, GREEN, BLUE, CYAN, MAGENTA, WHITE, RED };
   uint8_t rect_width = 100;
   uint8_t cross_width = 80;    // should always be even
