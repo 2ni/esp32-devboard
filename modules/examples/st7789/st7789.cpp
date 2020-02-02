@@ -220,6 +220,13 @@ void setup() {
   draw_line(x0,y0,x1,y1,BLACK);
 
   DL("done");
+
+  // test reset
+  delay(1000);
+  digitalWrite(RST, 0);
+  delay(1000);
+  init();
+  DL("init done");
 }
 
 void loop() {
